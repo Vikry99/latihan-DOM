@@ -261,7 +261,7 @@
       updateScore();
     }else {
       // variable previousAttemptAmount yang nilainya dari parseInt nilainya dari sessionStorage dengan key previousAttemptAmount
-      const previousAttemptAmount = parseInt(sessionStorage.getItem(previousAttemptAmount));
+      const previousAttemptAmount = parseInt(sessionStorage.getItem(sessionUserAttemptsKey));
       // mengeset sessionStorage dengan key sessionUserAttemptsKey dan nilai previousAttemptAmount di tambah 1
        sessionStorage.setItem(sessionUserAttemptsKey, previousAttemptAmount + 1);
       //  memasukan nilai text sessionUserAttemptsField yang nilainya dari session storage sessionUserAttemptsKey
