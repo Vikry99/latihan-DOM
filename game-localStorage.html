@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Web Storage Game</title>
+  <style>
+    hr {
+      height: 2px;
+      color: black;
+      background-color: black;
+      width: 95%;
+    }
+    
+    li {
+      margin-top: 1%;
+      margin-bottom: 1%;
+      font-size: 120%;
+    }
+    
+    .contents {
+      margin-left: 5%;
+      margin-right: 5%;
+    }
+    
+    .child-content {
+      border: 2px solid black;
+      padding-bottom: 2%;
+      margin-bottom: 1%;
+    }
+    
+    .button {
+      padding-left: 1%;
+      padding-right: 1%;
+      font-size: 140%;
+    }
+    
+    .answer-button {
+      margin-left: 2%;
+      margin-right: 2%;
+      padding: 2%;
+      font-size: 140%;
+      width: 12%;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .left {
+        text-align: left;
+    }
+    
+    #total-stats {
+      float: right;
+      width: 40%;
+      height: 50%;
+    }
+    
+    #gameboard {
+      float: left;
+      width: 55%;
+      height: 40%;
+    }
+    
+    #session-stats {
+      float: left;
+      margin-top: 1%;
+      width: 55%;
+    }
+    
+    #instructions {
+      float: right;
+      margin-top: 1%;
+      width: 40%;
+    }
+    
+    #instructions-list {
+      margin-left: 1%;
+      margin-right: 1%;
+    }
+
+  </style>
+</head>
+<body class="center">
+<h1 class="center">Permainan Tebak Angka '123'</h1>
+<div class="contents">
+  <div class="child-content" id="total-stats" class="center">
+    <h2>Local Stats</h2>
+    <hr>
+    <div id="all-local-stats">
+      <div class="local-stat-item">
+        <h3>Jumlah permainan yang berhasil dimenangkan:</h3>
+        <h3 id="local-total-victory-field"></h3>
+      </div>
+      <div class="local-stat-item">
+        <h3>Jumlah tebakan salah terbanyak sekali main:</h3>
+        <h3 id="local-maximum-attempt-field"></h3>
+      </div>
+      <button class="button" id="destroy-data-button">Hapus semua data</button>
+    </div>
+  </div>
+  
+  <div class="child-content" id="gameboard" class="center">
+    <h2>Game Board</h2>
+    <hr>
+    <div id="before-game-display">
+      <h3>Tekan tombol "Play" di bawah jika sudah siap</h3>
+      <button class="button" id="play-button">Bermain</button>
+    </div>
+    <div id="during-game-display" hidden>
+      <h3>Silahkan menebak angka!</h3>
+      <h3>Jawaban Anda:</h3>
+      <h1>"<u><span id="session-user-answer-field"></span></u>"</h1>
+      <button class="answer-button" id="answer-1-button">1</button>
+      <button class="answer-button" id="answer-2-button">2</button>
+      <button class="answer-button" id="answer-3-button">3</button>
+      <h3>"<span id="session-user-wrong-answer-field"></span>" bukanlah jawabannya...</h3><br><br>
+    </div>
+    <div id="after-game-display" hidden>
+      <h3>Selamat Tebakan Anda benar!</h3>
+      <h3>Jawabannya adalah: </h3>
+      <h1>"<span id="session-true-answer-field"></span>"</h1>
+      <h3><i></i>Refresh halaman ini untuk mencoba lagi</h3>
+    </div>
+  </div>
+  
+  <div class="child-content" id="session-stats" class="center">
+    <h2>Game Session Stats</h2>
+    <hr>
+    <div id="all-session-stats">
+      <div class="session-stat-item">
+        <h3>Jumlah Tebakan Salah:</h3>
+        <h3 id="session-user-attempts-amount-field"></h3>
+      </div>
+    </div>
+  </div>
+  
+  <div class="child-content" id="instructions">
+    <h2 class="center">Cara bermain</h2>
+    <hr>
+    <h3 class="center">Selamat datang ke permainan tebak angka, berikut instruksi-nya:</h3>
+    <ul id="instructions-list" class="left">
+      <li>Anda harus mencari kombinasi angka yang terdiri dari angka "1", "2", dan "3",
+        misalnya "231" dan "123".
+      </li>
+      <li>Angka yang ditebak hanya memiliki panjang 3 karakter saja,
+        sehingga kombinasi seperti "1231" tidak akan menjadi jawaban.
+      </li>
+      <li>Sebuah angka hanya akan muncul sekali dan hanya sekali,
+        sehingga kombinasi seperti "223" maupun "111" tidak akan menjadi jawaban.
+      </li>
+      <li><i>Have fun and don't cheat!</i></li>
+    </ul>
+  </div>
+</div>
+ 
+<script>
+  //inisialiasi variabel untuk menampung elemen dokumen
+  const localTotalVictoryField = document.getElementById('local-total-victory-field');
+  const localMaximumAttemptField = document.getElementById('local-maximum-attempt-field');
+  const destroyDataButton = document.getElementById('destroy-data-button');
+  const playButton = document.getElementById('play-button');
+  const beforeGameDisplay = document.getElementById('before-game-display');
+  const duringGameDisplay = document.getElementById('during-game-display');
+  const afterGameDisplay = document.getElementById('after-game-display');
+  const answerButton1 = document.getElementById('answer-1-button');
+  const answerButton2 = document.getElementById('answer-2-button');
+  const answerButton3 = document.getElementById('answer-3-button');
+  const sessionUserAnswerField = document.getElementById('session-user-answer-field');
+  const sessionUserWrongAnswerField = document.getElementById('session-user-wrong-answer-field');
+  const sessionTrueAnswerField = document.getElementById('session-true-answer-field');
+  const sessionUserAttemptsField = document.getElementById('session-user-attempts-amount-field');
+  
+  //inisialisasi fungsi untuk menghasilkan jawaban permainan
+  function getAnswer() {
+    let answer = '123'.split('');
+    for (let i = 0; i < answer.length; i++) {
+      let j = Math.floor(Math.random() * (i + 1));
+      let tmp = answer[i];
+      answer[i] = answer[j];
+      answer[j] = tmp;
+    }
+    return answer.join('');
+  }
+  
+  //inisialiasi key untuk session storage
+  const sessionAnswerKey = 'SESSION_ANSWER';
+  const sessionUserAttemptsKey = 'SESSION_USER_ATTEMPTS';
+  // const sessionUserIsPlayingKey = 'SESSION_USER_IS_PLAYING';
+  
+  //inisialisasi key untuk local storage
+  const localTotalVictoryKey = 'LOCAL_TOTAL_VICTORIES_PLAYED';
+  const localMaximumAttemptsKey = 'LOCAL_MAXIMUM_ATTEMPTS';
+
+
+  // mengecek menggunakan window.load untuk melihat apakah item pada local atau session sudah dibuat atau belum
+    window.addEventListener('load', function(){
+        if(typeof(Storage) !== "undefined"){
+            // menginisialisasi item yang ada pada web storage jika belum ada
+            if(sessionStorage.getItem(sessionAnswerKey) === null){
+                sessionStorage.setItem(sessionAnswerKey, '');
+            }
+            if(sessionStorage.getItem(sessionUserAttemptsKey) === null){
+                sessionStorage.setItem(sessionUserAttemptsKey, 0);
+            }
+            if(localStorage.getItem(localTotalVictoryKey) === null){
+                localStorage.setItem(localTotalVictoryKey, 0);
+            }
+            if(localStorage.getItem(localMaximumAttemptsKey) === null){
+                localStorage.setItem(localMaximumAttemptsKey, 0);
+            }
+        }else{
+            alert("Browser yang Anda gunakan tidak mendukung Web Storage");
+        }
+        // memasukan text yang nilainya dari session atau storage 
+        sessionUserAttemptsField.innerText = sessionStorage.getItem(sessionUserAttemptsKey);
+        localTotalVictoryField.innerText = localStorage.getItem(localTotalVictoryKey);
+        localMaximumAttemptField.innerText = localStorage.getItem(localMaximumAttemptsKey);
+    })
+    // listen variable playButton yang di dapat dari element yang mempunyai id play-button
+    playButton.addEventListener('click', function () {
+      sessionStorage.setItem(sessionAnswerKey, getAnswer());
+      beforeGameDisplay.setAttribute('hidden', true);
+      duringGameDisplay.removeAttribute('hidden');
+    });
+
+    // listen variable answerButton1 yang di dapat dari id answer-1-button, ketika di klik maka perintah yang ada di dalamnya akan berjalan
+    answerButton1.addEventListener('click', function () {
+      sessionUserAnswerField.innerText += '1';
+      if (sessionUserAnswerField.innerText.length == 3) {
+        checkAnswer(sessionUserAnswerField.innerText);
+      }
+    });
+
+    answerButton2.addEventListener('click', function () {
+      sessionUserAnswerField.innerText += '2';
+      if (sessionUserAnswerField.innerText.length == 3) {
+        checkAnswer(sessionUserAnswerField.innerText);
+      }
+    });
+
+    answerButton3.addEventListener("click", function () {
+      sessionUserAnswerField.innerText += '3';
+      if (sessionUserAnswerField.innerText.length == 3) {
+        checkAnswer(sessionUserAnswerField.innerText);
+      }
+    });
+
+  // function checkAnswer menggunakan yang mempunyai nilai userGuess parameter yang di masukan dari argument yang memanggil function
+  function checkAnswer(userGuess) {
+      //  membuat variable constanta answer yang nilainya dari session storage yang mempunyai key sessionAnswerKey
+    const answer = sessionStorage.getItem(sessionAnswerKey);
+      // melakukan pengecekan apakah userGuess nilainya sama tidak identik dengan asnwer
+    if( userGuess == answer) {
+      // mengeset attribute variable duringGameDisplay menjadi hidden 
+      duringGameDisplay.setAttribute('hidden', true);
+      // meremove attribute dari variable afterGameDisplay yang atributnya hidden
+      afterGameDisplay.removeAttribute('hidden');
+      // memasukan text kepada variable sessionTrueAnswerField yang nilainya dari answer
+      sessionTrueAnswerField.innerText = answer;
+      // memanggil function updateScore
+      updateScore();
+    }else {
+      // variable previousAttemptAmount yang nilainya dari parseInt nilainya dari sessionStorage dengan key previousAttemptAmount
+      const previousAttemptAmount = parseInt(sessionStorage.getItem(previousAttemptAmount));
+      // mengeset sessionStorage dengan key sessionUserAttemptsKey dan nilai previousAttemptAmount di tambah 1
+       sessionStorage.setItem(sessionUserAttemptsKey, previousAttemptAmount + 1);
+      //  memasukan nilai text sessionUserAttemptsField yang nilainya dari session storage sessionUserAttemptsKey
+       sessionUserAttemptsField.innerText = sessionStorage.getItem(sessionUserAttemptsKey);
+      //  mereset session sessionUserAnswerField menjadi text kosong
+       sessionUserAnswerField.innerText = '';
+      //  memasukan sessionUserWrongAnswerField dengan text nilai dari userGuess
+       sessionUserWrongAnswerField.innerText = userGuess;
+    }
+  }
+
+  // function updateScore
+  function updateScore(){
+    // variable sessionAttemptsValue yang di dapat dari session storage yang sudah di parseInt dengan key session sessionUserAttemptsKey
+    const sessionAttemptsValue = parseInt(sessionStorage.getItem(sessionUserAttemptsKey));
+    // variable localAttemptsValue yang di dapat dari localStorage yang sudah di parseInt dengan key session localMaximumAttemptsKey
+    const localAttemptsValue = parseInt(localStorage.getItem(localMaximumAttemptsKey));
+    // pengecekan apakah sessionAttemptsValue lebih besar dari localAttemptsValue
+    if(sessionAttemptsValue > localAttemptsValue){
+      // mengeset local storage dengan key localMaximumAttemptsKey dan nilai sessionAttemptsValue
+      localStorage.setItem(localMaximumAttemptsKey, sessionAttemptsValue);
+      // memasukan text ke localMaximumAttemptField yang nilainya dari sessionAttemptsValue
+      localMaximumAttemptField.innerText = sessionAttemptsValue;
+    }
+    // variable previousAttemptAmount nilainya dari parseInt dari localTotalVictoryKey
+    const previousAttemptAmount = parseInt(localStorage.getItem(localTotalVictoryKey));
+    // mengeset variable localStorage dengan key localTotalVictoryKey dan nilai previousAttemptAmount di tambah 1
+    localStorage.setItem(localTotalVictoryKey, previousAttemptAmount + 1);
+    // memasukan text ke varibale localTotalVictoryField yang nilainya dari local storage dengan key localTotalVictoryKey
+    localTotalVictoryField.innerText = localStorage.getItem(localTotalVictoryKey);
+  }
+
+  // linsten window sebelum loading maka akan menjalankan function ini
+  window.addEventListener('beforeunload', function(){
+    // format sessionUserAnswerField
+    sessionUserAnswerField.innerText = '';
+    // format sessionUserWrongAnswerField
+    sessionUserWrongAnswerField.innerText = '';
+    // mengeset session dengan key sessionUserAttemptsKey dengan nilai 0
+    sessionStorage.setItem(sessionUserAttemptsKey, 0);
+    // memasukan nilai text sessionUserAttemptsField dengan nilai dari session dengan key sessionUserAttemptsKey
+    sessionUserAttemptsField.innerText = sessionStorage.getItem(sessionUserAttemptsKey);
+  });
+
+</script>
+</body>
+</html>
